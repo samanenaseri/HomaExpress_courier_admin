@@ -51,24 +51,24 @@ class DashboardView extends StatelessWidget {
       mainAxisSpacing: 16,
       children: [
         _buildStatCard(
-          'Total Orders',
+          'مجموع سفارشات',
           controller.dashboardData.value.totalOrders.toString(),
           mainColor,
         ),
         _buildStatCard(
-          'Completed Orders',
+          'سفارشات تکمیل شده',
           controller.dashboardData.value.completedOrders.toString(),
           Colors.green,
         ),
         _buildStatCard(
-          'Pending Orders',
+          'سفارشات در انتظار',
           controller.dashboardData.value.pendingOrders.toString(),
           Colors.orange,
         ),
         _buildStatCard(
-          'Active Couriers',
+          'پیک های فعال',
           controller.dashboardData.value.activeCouriers.toString(),
-          mainColor.withOpacity(0.8),
+          mainColor.withValues(alpha:0.8),
         ),
       ],
     );
@@ -119,7 +119,7 @@ class DashboardView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Daily Orders',
+              'سفارشات روزانه',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,

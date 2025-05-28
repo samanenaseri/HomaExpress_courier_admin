@@ -5,6 +5,7 @@ import '../utils/constants.dart';
 import '../utils/custom_appbar.dart';
 import '../utils/drawer_widget.dart';
 import 'package:intl/intl.dart';
+import '../services/printer_service.dart';
 
 
 class PickupView extends StatelessWidget {
@@ -81,9 +82,71 @@ class PickupView extends StatelessWidget {
                                   return Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      _bottomSheetItems(context,Icons.photo,'آپلود کارت ملی'),
-                                      _bottomSheetItems(context,Icons.payment,'پرداخت'),
-                                      _bottomSheetItems(context,Icons.print,'چاپ رسید'),
+                                      _bottomSheetItems(
+                                          context: context,
+                                          icon:Icons.photo,
+                                          text: 'آپلود کارت ملی',
+                                          onTap: (){}),
+                                      _bottomSheetItems(
+                                          context: context,
+                                          icon:Icons.photo,
+                                          text: 'پرداخت',
+                                          onTap: () {
+                                            Get.toNamed('/payment', arguments: {
+                                              'orderNumber': pickup.orderNumber,
+                                              'amount': pickup.totalPrice,
+                                            });
+                                          }),
+                                      _bottomSheetItems(
+                                          context: context,
+                                          icon:Icons.photo,
+                                          text: 'چاپ رسید',
+                                          onTap: () async {
+                                            final pickupOrder = pickup;
+                                            final sender = pickupOrder.sender;
+                                            final receiver = pickupOrder.receiver;
+                                            final senderAddress = pickupOrder.senderAddress;
+                                            final receiverAddress = pickupOrder.receiverAddress;
+                                            final originCity = senderAddress?.city;
+                                            final destCity = receiverAddress?.city;
+                                            final originCountry = originCity?.country;
+                                            final destCountry = destCity?.country;
+                                            List<String> receiptLines = [
+                                              pickupOrder.orderNumber,
+                                              'هما اکسپرس',
+                                              'Homa Express',
+                                              'شعبه تهران',
+                                              '---------------------------',
+                                              'مشخصات فرستنده',
+                                              'کد ملی: \t${sender?.phone ?? "-"}',
+                                              'فرستنده: ${senderAddress?.name ?? "-"}',
+                                              'مبدا: ${originCountry?.faName ?? "-"} ${originCity?.faName ?? "-"}',
+                                              'آدرس: ${senderAddress?.address ?? "-"}',
+                                              '---------------------------',
+                                              'مشخصات گیرنده',
+                                              'گیرنده: ${receiverAddress?.name ?? "-"}',
+                                              'کد ملی: ${receiver?.phone ?? "-"}',
+                                              'مقصد: ${destCountry?.faName ?? "-"} ${destCity?.faName ?? "-"}',
+                                              'آدرس: ${receiverAddress?.address ?? "-"}',
+                                              '---------------------------',
+                                              'مشخصات مرسوله',
+                                              'وزن: ${pickupOrder.totalCosts} کیلوگرم',
+                                              'ارزش اظهار شده: ${pickupOrder.totalPrice}',
+                                              'تاریخ قبول: ${pickupOrder.createdAt.year}-${pickupOrder.createdAt.month}-${pickupOrder.createdAt.day}',
+                                              '---------------------------',
+                                              'مرکز تماس: ۸۹۴۴',
+                                              'www.homaexpressco.com',
+                                            ];
+                                            // Add extra empty lines to ensure the last lines are printed
+                                            receiptLines.addAll(['', '', '', '', '']);
+                                            final printerService = PrinterService();
+                                            final success = await printerService.printReceipt(receiptLines);
+                                            if (success) {
+                                              Get.snackbar('چاپ رسید', 'رسید با موفقیت چاپ شد', snackPosition: SnackPosition.BOTTOM);
+                                            } else {
+                                              Get.snackbar('خطا', 'چاپ رسید ناموفق بود', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+                                            }
+                                          }),
                                     ],
                                   );
                                 },
@@ -271,13 +334,10 @@ class PickupView extends StatelessWidget {
       }),
     );
   }
-  Widget _bottomSheetItems(context,image,text)=>ListTile(
-    leading: Icon(image,color: AppColors.logoGold,),
+  Widget _bottomSheetItems({required context,required icon,required text,required onTap})=>ListTile(
+    leading: Icon(icon,color: AppColors.logoGold,),
     title: Text(text,style: AppTextStyles.bottomSheetItems,),
-    onTap: () {
-      Navigator.pop(context);
-      // Add your logic here
-    },
+    onTap: onTap,
   );
   Widget _buildInfoRow(String label, String value) {
     return Padding(

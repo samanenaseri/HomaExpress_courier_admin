@@ -37,32 +37,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: true,
       backgroundColor: AppColors.logoPurple,
       elevation: 0,
-      actions: [
-        IconButton(
-          icon: Icon(Icons.logout),
-          onPressed: () {
-            Get.dialog(
-              AlertDialog(
-                title: Text('خروج از حساب کاربری'),
-                content: Text('آیا از خروج از حساب کاربری خود اطمینان دارید؟'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Get.back(),
-                    child: Text('انصراف'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Get.back();
-                      _authController.logout();
-                    },
-                    child: Text('خروج'),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-      ],
     );
   }
 

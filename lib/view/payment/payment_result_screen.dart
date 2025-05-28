@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class PaymentResultScreen extends StatelessWidget {
-  final String status;
-  final String message;
-
-  const PaymentResultScreen({super.key, required this.status, required this.message});
+  const PaymentResultScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final args = Get.arguments ?? {};
+    final String status = args['status']?.toString() ?? '';
+    final String message = args['message']?.toString() ?? '';
     final bool isSuccess = status.toLowerCase() == 'success';
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Payment Result")),
+      appBar: AppBar(title: const Text("نتیجه پرداخت")),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -20,7 +21,7 @@ class PaymentResultScreen extends StatelessWidget {
                 size: 80, color: isSuccess ? Colors.green : Colors.red),
             const SizedBox(height: 20),
             Text(
-              isSuccess ? "✅ Payment Successful" : "❌ Payment Failed",
+              isSuccess ? "✅ پرداخت موفق" : "❌ پرداخت ناموفق",
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
@@ -30,8 +31,8 @@ class PaymentResultScreen extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: isSuccess ? Colors.green : Colors.red,
               ),
-              onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
-              child: const Text("Back to Home"),
+              onPressed: () => Get.offAllNamed('/pickups'),
+              child: const Text("بازگشت به سفارشات"),
             ),
           ],
         ),
