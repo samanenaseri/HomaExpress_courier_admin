@@ -87,7 +87,7 @@ class MainActivity : FlutterFragmentActivity() {
             }
 
         val paymentChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PAYMENT_CHANNEL)
-        val paymentManager = PaymentManager(paymentChannel, this@MainActivity)
+        val paymentManager = PaymentManager(paymentChannel, this)
 
         paymentChannel.setMethodCallHandler { call, result ->
             when (call.method) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:homaexpress_courier_admin/utils/custom_appbar.dart';
 
 class PaymentResultScreen extends StatelessWidget {
   const PaymentResultScreen({super.key});
@@ -12,7 +13,9 @@ class PaymentResultScreen extends StatelessWidget {
     final bool isSuccess = status.toLowerCase() == 'success';
 
     return Scaffold(
-      appBar: AppBar(title: const Text("نتیجه پرداخت")),
+      appBar: CustomAppBar(
+        title: 'نتیجه پرداخت',
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

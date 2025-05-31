@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:homaexpress_courier_admin/services/payment_service.dart';
+import 'package:homaexpress_courier_admin/utils/custom_appbar.dart';
 import 'package:homaexpress_courier_admin/view/payment/CardSwipeScreen.dart';
 import '../../controller/payment_controller.dart';
 
@@ -20,10 +21,9 @@ class PaymentScreen extends StatelessWidget {
     controller.reset();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('پرداخت سفارش'),
-        backgroundColor: Colors.deepPurple,
-      ),
+     appBar: CustomAppBar(
+      title: 'پرداخت سفارش',
+    ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Center(
