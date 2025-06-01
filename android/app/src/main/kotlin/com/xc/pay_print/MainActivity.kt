@@ -11,6 +11,7 @@ import com.pos.sdk.cardreader.PosMagCardReader
 import android.os.IBinder
 import android.os.Binder
 import android.content.Context
+import com.xc.pay_print.config.EmvConfig;
 
 class MainActivity : FlutterFragmentActivity() {
 
@@ -19,6 +20,7 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        EmvConfig.loadDefaultAidAndCapk()
 
         try {
             val cardManager = POICardManager.getDefault(this)
