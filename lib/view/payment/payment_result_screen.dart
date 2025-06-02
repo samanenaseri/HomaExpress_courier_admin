@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:homaexpress_courier_admin/utils/custom_appbar.dart';
+import '../../utils/constants.dart';
 
 class PaymentResultScreen extends StatelessWidget {
   const PaymentResultScreen({super.key});
@@ -8,36 +8,48 @@ class PaymentResultScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final args = Get.arguments ?? {};
-    final String status = args['status']?.toString() ?? '';
-    final String message = args['message']?.toString() ?? '';
-    final bool isSuccess = status.toLowerCase() == 'success';
+    final String status = args['status']?.toString() ?? 'unknown';
+    final String message = args['message']?.toString() ?? 'بدون پیام';
+
+    final bool isSuccess = status == 'success';
 
     return Scaffold(
-      appBar: CustomAppBar(
-        title: 'نتیجه پرداخت',
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(isSuccess ? Icons.check_circle : Icons.error,
-                size: 80, color: isSuccess ? Colors.green : Colors.red),
-            const SizedBox(height: 20),
-            Text(
-              isSuccess ? "✅ پرداخت موفق" : "❌ پرداخت ناموفق",
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isSuccess ? Icons.check_circle_outline : Icons.cancel_outlined,
+                  size: 100,
+                  color: isSuccess ? Colors.green : Colors.red,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  isSuccess ? 'پرداخت موفق بود' : 'پرداخت ناموفق بود',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: isSuccess ? Colors.green : Colors.red,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () => Get.back(), // یا مسیر دلخواه
+                  child: const Text('بازگشت'),
+                )
+              ],
             ),
-            const SizedBox(height: 10),
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isSuccess ? Colors.green : Colors.red,
-              ),
-              onPressed: () => Get.offAllNamed('/pickups'),
-              child: const Text("بازگشت به سفارشات"),
-            ),
-          ],
+          ),
         ),
       ),
     );

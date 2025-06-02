@@ -11,6 +11,9 @@ import com.pos.sdk.security.POIHsmManage;
 import com.pos.sdk.security.PedKeyInfo;
 import com.pos.sdk.security.PedKcvInfo;
 import com.xc.pay_print.config.EmvConfig;
+import com.pos.sdk.printer.POIPrinterManager;
+import com.pos.sdk.printer.models.TextPrintLine;
+
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +37,7 @@ public class PaymentManager {
     public void startPayment(double amount) {
         try {
             Log.d(TAG, "🔁 Starting EMV Transaction...");
+            Log.d(TAG, "⚙️ emvCoreManager: " + (emvCoreManager == null ? "null" : "ok"));
 
             // 🔐 Inject TDK Key
             POIHsmManage hsmManage = POIHsmManage.getDefault();
@@ -41,13 +45,13 @@ public class PaymentManager {
             PedKcvInfo kcvInfo = new PedKcvInfo(0, new byte[5]);
 
             PedKeyInfo tdk = new PedKeyInfo();
-            tdk.dstKeyType = 1; // TDK
+            tdk.dstKeyType = POIHsmManage.PED_TDK; // TDK
             tdk.dstKeyIdx = 1;  // PSP key index
             tdk.dstKeyLen = tdkBytes.length;
             tdk.dstKeyData = tdkBytes;
 
-            int writeResult = hsmManage.PedWriteKey(tdk, kcvInfo);
-            Log.d(TAG, "🔐 PedWriteKey result: " + writeResult);
+//            int writeResult = hsmManage.PedWriteKey(tdk, kcvInfo);
+//            Log.d(TAG, "🔐 PedWriteKey result: " + writeResult);
 
             // 🔧 Load AID & CAPK configs
             EmvConfig.loadDefaultAidAndCapk();
@@ -63,23 +67,103 @@ public class PaymentManager {
 
 
             // ▶️ Start EMV Transaction
+            try{
             emvCoreManager.startTransaction(transBundle, new IPosEmvCoreListener.Stub() {
+                // افزودن فراخوانی چاپ در پایان onTransactionResult اگر موفق بود
                 @Override
                 public void onTransactionResult(int result, Bundle bundle) throws RemoteException {
                     Log.d(TAG, "✅ Transaction finished with result: " + result);
+                    if (result == 0) {
+                        String amount = bundle.getString("amount", "0");
+                        String authCode = bundle.getString("authCode", "123456");
+                        printReceipt(amount, authCode);
+                    }
                     sendStatusToFlutter(result == 0 ? "success" : "failed", "Result code: " + result);
                 }
 
+                // بخش 3: پاسخ دادن به SEP برای ادامه تراکنش
                 @Override
                 public void onRequestOnlineProcess(Bundle requestData) throws RemoteException {
-                    Log.d(TAG, "📡 Online process requested");
+                    Log.d(TAG, "📡 Online request sent by SEP internally. Auto-approve to continue flow.");
                     Bundle response = new Bundle();
-                    response.putString("respCode", "00");
-                    response.putString("authCode", "123456");
+                    response.putString("respCode", "00");     // پاسخ تأیید
+                    response.putString("authCode", "123456"); // کد تأیید تستی
                     emvCoreManager.onSetOnlineResponse(response);
                 }
 
-                @Override public void onRequestInputPin(Bundle bundle) {}
+                // بخش 2: گرفتن رمز کارت (PIN) از کاربر
+                @Override
+                public void onRequestInputPin(Bundle bundle) throws RemoteException {
+                    Log.d(TAG, "⌨️ Requesting PIN entry...");
+
+                    POIHsmManage hsm = POIHsmManage.getDefault();
+                    String pan = bundle.getString("pan", "0000000000000000");
+
+                    byte[] inputData = new byte[24];
+                    byte[] panBytes = pan.getBytes();
+                    System.arraycopy(panBytes, 0, inputData, 0, Math.min(16, panBytes.length));
+                    byte[] formatData = new byte[8];
+                    System.arraycopy(formatData, 0, inputData, 16, 8);
+
+                    int result = hsm.PedGetPinBlock(
+                            POIHsmManage.PED_PINBLOCK_FETCH_MODE_DUKPT,
+                            1,
+                            POIHsmManage.PED_PINBLOCK_DUKPT_FMT_ISO9564_0_KSN_INC,
+                            60000,
+                            inputData,
+                            "06"
+                    );
+                    Log.d(TAG, "📥 PIN input result: " + result);
+                }
+                // بخش 4: چاپ رسید پس از موفقیت تراکنش (بدون آسیب به بخش‌های دیگر چاپ)
+                private void printReceipt(String amount, String authCode) {
+                    try {
+                        POIPrinterManager printer = new POIPrinterManager(context);
+                        printer.open();
+
+                        // ایجاد خطوط رسید
+                        TextPrintLine title = new TextPrintLine("--- رسید پرداخت ---");
+                        TextPrintLine lineAmount = new TextPrintLine("مبلغ: " + amount + " تومان");
+                        TextPrintLine lineAuth = new TextPrintLine("کد تأیید: " + authCode);
+                        TextPrintLine lineDate = new TextPrintLine("تاریخ: " + java.time.LocalDate.now().toString());
+                        TextPrintLine lineThanks = new TextPrintLine("با تشکر از خرید شما");
+                        TextPrintLine separator = new TextPrintLine("---------------------");
+
+                        // افزودن خطوط برای چاپ
+                        printer.addPrintLine(title);
+                        printer.addPrintLine(lineAmount);
+                        printer.addPrintLine(lineAuth);
+                        printer.addPrintLine(lineDate);
+                        printer.addPrintLine(lineThanks);
+                        printer.addPrintLine(separator);
+
+                        // شروع چاپ
+                        printer.beginPrint(new POIPrinterManager.IPrinterListener() {
+                            @Override
+                            public void onStart() {
+                                Log.d(TAG, "🖨 شروع چاپ رسید");
+                            }
+
+                            @Override
+                            public void onFinish() {
+                                Log.d(TAG, "✅ چاپ رسید کامل شد");
+                                printer.close();  // آزادسازی منابع
+                            }
+
+                            @Override
+                            public void onError(int code, String message) {
+                                Log.e(TAG, "❌ خطا در چاپ رسید: " + code + " - " + message);
+                                printer.close();
+                            }
+                        });
+                        Log.d(TAG, "✅ startTransaction method has been called.");
+
+                    } catch (Exception e) {
+                        Log.e(TAG, "🖨 چاپ رسید با خطا مواجه شد: " + e.getMessage());
+                    }
+                }
+
+
                 @Override public void onEmvProcess(int type, Bundle bundle) {}
                 @Override public void onSelectApplication(List<String> list, boolean isFirstSelect) throws RemoteException {
                     emvCoreManager.onSetSelectResponse(0);
@@ -89,7 +173,11 @@ public class PaymentManager {
                 }
                 @Override public void onKernelType(int type) {}
                 @Override public void onSecondTapCard() {}
-            });
+            });}
+            catch (Exception ee) {
+                Log.e(TAG, "❗ Exception inside startTransaction: " + ee.getMessage());
+            }
+
 
         } catch (Exception e) {
             Log.e(TAG, "💥 Exception in startPayment: " + e.getMessage());
@@ -118,3 +206,5 @@ public class PaymentManager {
         }
     }
 }
+
+
