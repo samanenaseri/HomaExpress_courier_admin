@@ -5,12 +5,10 @@ import '../../utils/constants.dart';
 
 class CardSwipeScreen extends StatefulWidget {
   final double amount;
-  final PaymentService paymentService;
 
   const CardSwipeScreen({
     Key? key,
     required this.amount,
-    required this.paymentService,
   }) : super(key: key);
 
   @override
@@ -20,6 +18,7 @@ class CardSwipeScreen extends StatefulWidget {
 class _CardSwipeScreenState extends State<CardSwipeScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
+  final PaymentService _paymentService = PaymentService();
 
   @override
   void initState() {
@@ -32,21 +31,21 @@ class _CardSwipeScreenState extends State<CardSwipeScreen> with SingleTickerProv
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
 
-    widget.paymentService.onPaymentResult = (status, message) {
+    _paymentService.setListener((status, message) {
       Get.offAllNamed('/paymentResult', arguments: {
         'status': status,
         'message': message,
       });
-    };
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.paymentService.startPayment(widget.amount);
+      _paymentService.startPayment(widget.amount);
     });
   }
 
   @override
   void dispose() {
-    widget.paymentService.onPaymentResult = null;
+    _paymentService.removeListener();
     _controller.dispose();
     super.dispose();
   }
@@ -77,13 +76,11 @@ class _CardSwipeScreenState extends State<CardSwipeScreen> with SingleTickerProv
                     return Stack(
                       alignment: Alignment.center,
                       children: [
-                        // POS device
                         Icon(
                           Icons.phone_android,
                           size: 120,
                           color: AppColors.logoPurple.withOpacity(0.3),
                         ),
-                        // Animated card
                         Positioned(
                           top: 60 - _animation.value,
                           child: Icon(

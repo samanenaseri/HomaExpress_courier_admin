@@ -8,6 +8,7 @@ class PaymentService {
   PaymentService() {
     _channel.setMethodCallHandler(_handleMethodCall);
   }
+
   void setListener(Function(String, String) listener) {
     onPaymentResult = listener;
   }
@@ -15,7 +16,6 @@ class PaymentService {
   void removeListener() {
     onPaymentResult = null;
   }
-
 
   Future<dynamic> _handleMethodCall(MethodCall call) async {
     try {
@@ -31,7 +31,6 @@ class PaymentService {
       print("❌ Error in _handleMethodCall: $e");
     }
   }
-
   Future<bool> startPayment(double amount) async {
     try {
       print("📤 Invoking native payment with amount: $amount");

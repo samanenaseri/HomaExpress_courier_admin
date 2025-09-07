@@ -13,12 +13,15 @@ class PaymentController extends GetxController {
   void onInit() {
     super.onInit();
     _paymentService = PaymentService();
-    _paymentService.onPaymentResult = (String s, String m) {
+    _paymentService.setListener((String s, String m) {
       status.value = s;
       message.value = m;
       isProcessing.value = false;
-      Get.offAllNamed('/paymentResult');
-    };
+      Get.offAllNamed('/paymentResult', arguments: {
+        'status': s,
+        'message': m,
+      });
+    });
   }
 
   void startPayment(double amt) {
@@ -33,4 +36,4 @@ class PaymentController extends GetxController {
     message.value = '';
     isProcessing.value = false;
   }
-} 
+}

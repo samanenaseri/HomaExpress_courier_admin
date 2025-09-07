@@ -31,7 +31,13 @@ public class PaymentPlugin implements FlutterPlugin, MethodCallHandler {
                 if (call.argument("amount") != null) {
                     double amount = (double) call.argument("amount");
                     Log.d(TAG, "Calling paymentManager.startPayment for amount: " + amount);
-                    paymentManager.startPayment(amount);
+                    paymentManager.startPayment(
+                            amount,
+                            "1234567890",   // orderId
+                            "51533600",     // terminalId
+                            "51040293"      // merchantId
+                    );
+
                     Log.d(TAG, "Calling result.success(true).");
                     result.success(true);
                     Log.d(TAG, "Called result.success(true).");
