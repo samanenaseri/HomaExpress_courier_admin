@@ -48,7 +48,7 @@ class PaymentService {
   }
 
   /// اگر SDK نیتیو مبلغ را به صورت واحد کوچکتر می‌خواهد، اینجا تبدیل کن (مثلاً *10 برای ریال).
-  Future<bool> startPayment(double amount, {String? orderNumber}) async {
+  Future<bool> startPayment(int amount, {String? orderNumber}) async {
     try {
       final payload = <String, dynamic>{'amount': amount};
       if (orderNumber != null && orderNumber.isNotEmpty) {
