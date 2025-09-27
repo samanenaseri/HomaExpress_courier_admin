@@ -58,8 +58,10 @@ android {
 
     buildTypes {
         release {
-            // Optional signingConfig or proguard rules
+            minifyEnabled false
+            shrinkResources false
         }
+        debug { minifyEnabled false }
     }
 }
 

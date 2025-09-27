@@ -265,4 +265,4 @@ class PaymentController extends GetxController {
     _paymentService.removeListener();
     super.onClose();
   }
-}
+  }
