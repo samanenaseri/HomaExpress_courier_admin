@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controller/payment_controller.dart';
+import '../../controller/payment_controller.dart'; // اگر ترجیح می‌دی، package import کن
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({Key? key}) : super(key: key);
@@ -28,13 +28,13 @@ class _PaymentScreenState extends State<PaymentScreen> with WidgetsBindingObserv
     super.dispose();
   }
 
-  // وقتی از اپ بانکی برمی‌گردیم، این فراخوانی می‌شود
+  // وقتی از اپ بانکی برمی‌گردیم
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // اگر هنوز لودینگ روشن مانده و callback نیامده، آزادش کن
       Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted && controller.isProcessing.value) {
+        if (!mounted) return;
+        if (controller.isProcessing.value) {
           controller.resetProcessing();
         }
       });
@@ -59,13 +59,12 @@ class _PaymentScreenState extends State<PaymentScreen> with WidgetsBindingObserv
               children: [
                 Text('شماره سفارش: ${order.isEmpty ? "-" : order}'),
                 const SizedBox(height: 8),
-                Text('مبلغ: ${amount.toStringAsFixed(2)}'),
+                Text('مبلغ (تومان): $amount'),
                 const Spacer(),
                 ElevatedButton(
                   onPressed: loading ? null : controller.startPayment,
                   child: loading
-                      ? const SizedBox(
-                      width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Text('شروع پرداخت'),
                 ),
               ],

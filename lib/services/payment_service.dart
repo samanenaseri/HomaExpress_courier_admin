@@ -1,12 +1,10 @@
-
+import 'dart:async';
 import 'package:flutter/services.dart';
 
 class PaymentService {
   static const MethodChannel _channel = MethodChannel('com.xc.pay_print/payment');
 
-  // برای جلوگیری از چندبار ست شدن handler
   static bool _handlerAttached = false;
-
   Function(String status, String message)? onPaymentResult;
 
   PaymentService() {
@@ -16,19 +14,14 @@ class PaymentService {
     }
   }
 
-  void setListener(Function(String, String) listener) {
-    onPaymentResult = listener;
-  }
-
-  void removeListener() {
-    onPaymentResult = null;
-  }
+  void setListener(Function(String, String) listener) => onPaymentResult = listener;
+  void removeListener() => onPaymentResult = null;
 
   Future<dynamic> _handleMethodCall(MethodCall call) async {
     try {
       switch (call.method) {
         case 'onPaymentResult':
-          final args = (call.arguments is Map)
+          final Map<String, dynamic> args = (call.arguments is Map)
               ? Map<String, dynamic>.from(call.arguments as Map)
               : <String, dynamic>{'raw': call.arguments};
 
@@ -47,24 +40,47 @@ class PaymentService {
     }
   }
 
-  /// اگر SDK نیتیو مبلغ را به صورت واحد کوچکتر می‌خواهد، اینجا تبدیل کن (مثلاً *10 برای ریال).
-  Future<bool> startPayment(int amount, {String? orderNumber}) async {
+  Future<bool> startPayment(
+      int amount, {
+        String? orderNumber,
+        bool test = false,
+      }) async {
     try {
-      final payload = <String, dynamic>{'amount': amount};
+      final payload = <String, dynamic>{
+        'amount': amount,
+        'test': test,            // اگر اپ مقصد کلید دیگری می‌خواهد، این را تغییر بده
+      };
       if (orderNumber != null && orderNumber.isNotEmpty) {
         payload['orderNumber'] = orderNumber;
       }
 
       print('📤 Invoking native: startPayment $payload');
-      await _channel.invokeMethod('startPayment', payload);
+
+      // اگر نیتیو پاسخی همگام برگرداند:
+      final dynamic res = await _channel
+          .invokeMethod('startPayment', payload)
+          .timeout(const Duration(seconds: 60));
+
+      if (res is Map) {
+        final status  = res['status']?.toString()  ?? 'unknown';
+        final message = res['message']?.toString() ?? '';
+        print('↩️ sync payment result from native: $res');
+        onPaymentResult?.call(status, message);
+      }
+
       return true;
+    } on MissingPluginException catch (e) {
+      // ⛔️ دیگر به listener سیگنال نمی‌دهیم؛ فقط false برمی‌گردانیم
+      print('❌ MissingPluginException: $e');
+      return false;
     } on PlatformException catch (e) {
       print('❌ PlatformException starting payment: ${e.code} ${e.message}');
-      onPaymentResult?.call('ERROR', e.message ?? 'PlatformException');
+      return false;
+    } on TimeoutException catch (e) {
+      print('❌ Timeout invoking native: $e');
       return false;
     } catch (e) {
       print('❌ Error starting payment: $e');
-      onPaymentResult?.call('ERROR', e.toString());
       return false;
     }
   }
