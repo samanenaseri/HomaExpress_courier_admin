@@ -81,7 +81,7 @@ class MainActivity : FlutterFragmentActivity() {
         paymentChannel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "startPayment" -> {
-                    val amount = call.argument<Double>("amount") ?: 0.0
+                    val amount = call.argument<int>("amount") ?: 0.0
                     val orderId = call.argument<String>("orderId") ?: "1234567890"
                     val terminalId = call.argument<String>("terminalId") ?: "51533600"
                     val merchantId = call.argument<String>("merchantId") ?: "51040293"
