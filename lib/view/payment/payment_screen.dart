@@ -1,152 +1,78 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:homaexpress_courier_admin/services/payment_service.dart';
 import 'package:homaexpress_courier_admin/utils/constants.dart';
-import 'package:homaexpress_courier_admin/utils/custom_appbar.dart';
-import 'package:homaexpress_courier_admin/view/payment/CardSwipeScreen.dart';
 import '../../controller/payment_controller.dart';
 
+class PaymentScreen extends StatefulWidget {
+  const PaymentScreen({Key? key}) : super(key: key);
 
-class PaymentScreen extends StatelessWidget {
-  PaymentScreen({super.key});
+  @override
+  State<PaymentScreen> createState() => _PaymentScreenState();
+}
 
-  final PaymentController controller = Get.put(PaymentController());
+class _PaymentScreenState extends State<PaymentScreen> with WidgetsBindingObserver {
+  late final PaymentController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    controller = Get.isRegistered<PaymentController>()
+        ? Get.find<PaymentController>()
+        : Get.put(PaymentController());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // وقتی از اپ بانکی برمی‌گردیم، این فراخوانی می‌شود
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // اگر هنوز لودینگ روشن مانده و callback نیامده، آزادش کن
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted && controller.isProcessing.value) {
+          controller.resetProcessing();
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final args = Get.arguments ?? {};
-    final String orderNumber = args['orderNumber']?.toString() ?? '';
-    final double amount = (args['amount'] is double)
-        ? args['amount']
-        : double.tryParse(args['amount']?.toString() ?? '') ?? 0.0;
-    controller.reset();
-
-    return Scaffold(
-      appBar: CustomAppBar(
-        title: 'پرداخت سفارش',
-      ),
-      body: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Center(
-            child: Obx(() => Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                Icon(Icons.payment, size: 64, color: Colors.deepPurple),
-                const SizedBox(height: 16),
-                Text('شماره سفارش: $orderNumber',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                Text('مبلغ قابل پرداخت:',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[700])),
-                Text('${amount.toStringAsFixed(0)} تومان',
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green)),
-                const SizedBox(height: 32),
-                controller.isProcessing.value
-                    ? const CircularProgressIndicator()
-                    : SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.credit_card),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(0, 48),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () {
-                      Get.to(() => CardSwipeScreen(amount: amount, paymentService: PaymentService()));
-                    },
-                    label: const Text('پرداخت'),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                if (controller.status.value.isNotEmpty)
-            Column(
-          children: [
-          Icon(
-          controller.status.value == 'success' ? Icons.check_circle : Icons.error,
-            child: Obx(() =>SingleChildScrollView(
-                child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                    Icon(Icons.payment, size: 64, color: Colors.deepPurple),
-                const SizedBox(height: 16),
-                Text('شماره سفارش: $orderNumber',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-
-
-                const SizedBox(height: 12),
-                Text('مبلغ قابل پرداخت:',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[700])),
-                Text('${amount.toStringAsFixed(0)} تومان',
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green)),
-                const SizedBox(height: 32),
-                controller.isProcessing.value
-                    ? const CircularProgressIndicator()
-                    : SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.credit_card),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(0, 48),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () {
-
-                      controller.startPayment(amount);
-                    },
-                    label: const Text('پرداخت'),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                if (controller.status.value.isNotEmpty)
-              Column(
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('پرداخت')),
+        body: Obx(() {
+          final amount = controller.amount.value;
+          final order = controller.orderNumber.value;
+          final loading = controller.isProcessing.value;
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-              Icon(
-              controller.status.value == 'success' ? Icons.check_circle : Icons.error,
-              color: controller.status.value == 'success' ? Colors.green : Colors.red,
-              size: 40,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              controller.status.value == 'success' ? 'پرداخت موفق' : 'پرداخت ناموفق',
-              style: TextStyle(
-                color: controller.status.value == 'success' ? Colors.green : Colors.red,
-                size: 40,
-                fontWeight: FontWeight.bold,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                controller.status.value == 'success' ? 'پرداخت موفق' : 'پرداخت ناموفق',
-                style: TextStyle(
-                  color: controller.status.value == 'success' ? Colors.green : Colors.red,
-                  fontWeight: FontWeight.bold,
+                Text('شماره سفارش: ${order.isEmpty ? "-" : order}'),
+                const SizedBox(height: 8),
+                Text('مبلغ: ${amount.toStringAsFixed(2)}'),
+                const Spacer(),
+                ElevatedButton(
+                  onPressed: loading ? null : controller.startPayment,
+                  child: loading
+                      ? const SizedBox(
+                      width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('شروع پرداخت'),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(controller.message.value, textAlign: TextAlign.center),
               ],
             ),
-            ],
-          )),
-    ),
-    const SizedBox(height: 8),
-    Text(controller.message.value, textAlign: TextAlign.center),
-    ],
-    ),
-    ],
-    ),
-    )),
-    ),
-    ),
+          );
+        }),
+      ),
     );
   }
 }

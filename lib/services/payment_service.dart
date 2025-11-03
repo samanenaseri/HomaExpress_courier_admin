@@ -1,45 +1,74 @@
+// lib/services/payment_service.dart
 import 'package:flutter/services.dart';
+
+typedef PaymentResultCallback = void Function(Map<dynamic, dynamic> result);
 
 class PaymentService {
   static const MethodChannel _channel = MethodChannel('com.xc.pay_print/payment');
 
-  Function(String status, String message)? onPaymentResult;
+  PaymentResultCallback? _listener;
 
   PaymentService() {
-    _channel.setMethodCallHandler(_handleMethodCall);
+    _channel.setMethodCallHandler(_methodCallHandler);
   }
 
-  void setListener(Function(String, String) listener) {
-    onPaymentResult = listener;
+  void setListener(PaymentResultCallback listener) {
+    _listener = listener;
   }
 
   void removeListener() {
-    onPaymentResult = null;
+    _listener = null;
   }
 
-
-  Future<dynamic> _handleMethodCall(MethodCall call) async {
-    try {
-      if (call.method == 'onPaymentResult') {
-        final status = call.arguments['status']?.toString() ?? 'unknown';
-        final message = call.arguments['message']?.toString() ?? 'No message';
-        print("📥 Received from native: $status - $message");
-        onPaymentResult?.call(status, message);
-      } else {
-        print("⚠️ Unknown method received: ${call.method}");
-      }
-    } catch (e) {
-      print("❌ Error in _handleMethodCall: $e");
+  Future<void> _methodCallHandler(MethodCall call) async {
+    if (call.method == 'onPaymentResult') {
+      final result = (call.arguments as Map).cast<dynamic, dynamic>();
+      _listener?.call(result);
     }
   }
 
-  Future<bool> startPayment(double amount) async {
+  /// پرسیدن از native آیا اپ پرداخت نصب است یا نه
+  Future<bool> isPaymentAppInstalled() async {
     try {
-      print("📤 Invoking native payment with amount: $amount");
-      await _channel.invokeMethod('startPayment', {'amount': amount});
+      final bool installed = await _channel.invokeMethod('isPaymentAppInstalled', {});
+      return installed;
+    } on PlatformException catch (e) {
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> startPayment(
+      int amount, {
+        required String orderNumber,
+        bool test = false,
+        int? testAmount,
+        bool forceTestSuccess = true,
+        String? terminalId,
+        String? merchantId,
+        bool launchRealAppInTest = false,
+      }) async {
+    try {
+      final args = <String, dynamic>{
+        'amount': amount,
+        'orderId': orderNumber,
+        'test': test,
+        if (testAmount != null) 'testAmount': testAmount,
+        'forceTestSuccess': forceTestSuccess,
+        if (terminalId != null) 'terminalId': terminalId,
+        if (merchantId != null) 'merchantId': merchantId,
+        'launchRealAppInTest': launchRealAppInTest,
+      };
+
+      await _channel.invokeMethod('startPayment', args);
       return true;
     } on PlatformException catch (e) {
-      print('❌ Error starting payment: ${e.message}');
+      if (e.message != null && e.message!.isNotEmpty) {
+        // show/return message if you want
+      }
+      return false;
+    } catch (e) {
       return false;
     }
   }
