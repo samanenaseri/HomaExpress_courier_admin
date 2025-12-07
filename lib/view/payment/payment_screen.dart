@@ -9,14 +9,12 @@ class PaymentScreen extends StatefulWidget {
   @override
   State<PaymentScreen> createState() => _PaymentScreenState();
 }
-
-class _PaymentScreenState extends State<PaymentScreen> with WidgetsBindingObserver {
+class _PaymentScreenState extends State<PaymentScreen> {
   late final PaymentController controller;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
 
     controller = Get.isRegistered<PaymentController>()
         ? Get.find<PaymentController>()
@@ -24,55 +22,50 @@ class _PaymentScreenState extends State<PaymentScreen> with WidgetsBindingObserv
   }
 
   @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  // وقتی از اپ بانکی برمی‌گردیم، این فراخوانی می‌شود
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // اگر هنوز لودینگ روشن مانده و callback نیامده، آزادش کن
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted && controller.isProcessing.value) {
-          controller.resetProcessing();
-        }
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(title: const Text('پرداخت')),
-        body: Obx(() {
-          final amount = controller.amount.value;
-          final order = controller.orderNumber.value;
-          final loading = controller.isProcessing.value;
-          return Padding(
+      child: Obx(() {
+        final loading = controller.isProcessing.value;
+
+        if (loading) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('پرداخت')),
+            body: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        final amount = controller.amount.value;
+        final order = controller.orderNumber.value;
+
+        return Scaffold(
+          appBar: AppBar(title: const Text('پرداخت')),
+          body: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('شماره سفارش: ${order.isEmpty ? "-" : order}'),
                 const SizedBox(height: 8),
-                Text('مبلغ: ${amount.toStringAsFixed(2)}'),
+                Text('مبلغ: ${amount.toStringAsFixed(0)} ریال'),
                 const Spacer(),
-                ElevatedButton(
-                  onPressed: loading ? null : controller.startPayment,
-                  child: loading
-                      ? const SizedBox(
-                      width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Text('شروع پرداخت'),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: controller.startPayment,
+                    child: const Text('شروع پرداخت'),
+                  ),
                 ),
+                const SizedBox(height: 12),
+
               ],
             ),
-          );
-        }),
-      ),
+          ),
+        );
+      }),
     );
   }
 }
+

@@ -62,14 +62,44 @@ public class PaymentManager {
      * این متد می‌تونه parse کنه و برای Flutter بفرسته.
      * الان اجباری نیست ازش استفاده کنی، ولی نگهش می‌داریم.
      */
+//    public void handleResultFromIntent(Intent intent) {
+//        if (intent == null) {
+//            sendStatusToFlutter("failed", "No data received from TechPay");
+//            return;
+//        }
+//
+//        String transaction = intent.getStringExtra("transaction");
+//        if (transaction == null) {
+//            sendStatusToFlutter("failed", "Transaction result is null");
+//            return;
+//        }
+//
+//        Log.d(TAG, "📩 TechPay result: " + transaction);
+//
+//        String[] parts = transaction.split(",");
+//        String status = parts.length > 0 ? parts[0] : "unknown";
+//        String message = parts.length > 4 ? parts[4] : "No message";
+//
+//        Map<String, Object> result = new HashMap<>();
+//        result.put("status", status);
+//        result.put("message", message);
+//
+//        channel.invokeMethod("onPaymentResult", result);
+//    }
     public void handleResultFromIntent(Intent intent) {
+        Log.d(TAG, "2) handleResultFromIntent called, intent = " + intent);
+
         if (intent == null) {
+            Log.e(TAG, "2.1) intent is null");
             sendStatusToFlutter("failed", "No data received from TechPay");
             return;
         }
 
         String transaction = intent.getStringExtra("transaction");
+        Log.d(TAG, "2.2) transaction extra = " + transaction);
+
         if (transaction == null) {
+            Log.e(TAG, "2.3) transaction is null");
             sendStatusToFlutter("failed", "Transaction result is null");
             return;
         }
@@ -81,11 +111,15 @@ public class PaymentManager {
         String message = parts.length > 4 ? parts[4] : "No message";
 
         Map<String, Object> result = new HashMap<>();
+        result.put("raw", transaction);
         result.put("status", status);
         result.put("message", message);
 
+        Log.d(TAG, "3) invoking onPaymentResult on channel with result = " + result);
         channel.invokeMethod("onPaymentResult", result);
     }
+
+
 
     private void sendStatusToFlutter(String status, String message) {
         Map<String, Object> result = new HashMap<>();

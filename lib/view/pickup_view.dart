@@ -86,17 +86,34 @@ class PickupView extends StatelessWidget {
                                           context: context,
                                           icon:Icons.photo,
                                           text: 'آپلود کارت ملی',
-                                          onTap: (){}),
+                                          onTap: (){
+                                            Navigator.of(context).pop(); // بستن bottom sheet (اختیاری)
+                                            controller.uploadAttachmentForOrder(pickup.id);
+                                            // یا pickup.orderId بسته به مدل‌ات
+                                          },),
                                       _bottomSheetItems(
                                           context: context,
                                           icon:Icons.photo,
                                           text: 'پرداخت',
-                                          onTap: () {
-                                            Get.toNamed('/payment', arguments: {
-                                              'orderNumber': pickup.orderNumber,
-                                              'amount': pickup.totalPrice,
-                                            });
-                                          }),
+                                        onTap: () {
+                                          if (pickup.paymentTransitionCode != null &&
+                                              pickup.paymentTransitionCode.toString().isNotEmpty) {
+                                            Get.snackbar(
+                                              'پرداخت قبلاً انجام شده',
+                                              'این سفارش یک‌بار پرداخت شده است و امکان پرداخت مجدد برایش وجود ندارد.',
+                                              snackPosition: SnackPosition.BOTTOM,
+                                              duration: const Duration(seconds: 3),
+                                              backgroundColor: Colors.red,
+                                              colorText: Colors.white,
+                                            );
+                                            return;
+                                          }
+                                          Get.toNamed('/payment', arguments: { 'orderNumber': pickup.orderNumber,
+                                            'amount': pickup.totalPrice,'customer_id': pickup.senderId,})?.then((_) {
+                                            controller.fetchPickups(refresh: true);
+                                          });
+
+                                        },),
                                       _bottomSheetItems(
                                           context: context,
                                           icon:Icons.photo,
@@ -172,25 +189,7 @@ class PickupView extends StatelessWidget {
                   subtitle: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Container(
-                       // margin: EdgeInsets.only(top: 8),
-                       // padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        // decoration: BoxDecoration(
-                        //   color: pickup.status == 'pending' ? Colors.orange.withValues(alpha: 0.1) : Colors.green.withValues(alpha: 0.1),
-                        //   borderRadius: BorderRadius.circular(20),
-                        //   border: Border.all(
-                        //     color: pickup.status == 'pending' ? Colors.orange : Colors.green,
-                        //     width: 1,
-                        //   ),
-                        // ),
-                      //   child: Text(
-                      //     pickup.status,
-                      //     style: TextStyle(
-                      //       color: pickup.status == 'pending' ? Colors.orange : Colors.green,
-                      //       fontWeight: FontWeight.bold,
-                      //     ),
-                      //   ),
-                      // ),
+
                     ],
                   ),
                   children: [
@@ -295,8 +294,8 @@ class PickupView extends StatelessWidget {
                                 Divider(height: 24),
                                 _buildInfoRow('شماره سفارش', pickup.orderNumber),
                                 _buildInfoRow('نوع سفارش', pickup.orderType),
-                                _buildInfoRow('قیمت کل', '${pickup.totalPrice} تومان'),
-                                _buildInfoRow('مبلغ COD', '${pickup.codAmount} تومان'),
+                                _buildInfoRow('قیمت کل', '${pickup.totalPrice} ریال '),
+                                _buildInfoRow('مبلغ COD', '${pickup.codAmount} ریال '),
                                 if (pickup.courierName != null)
                                   _buildInfoRow('نام پیک', pickup.courierName!),
                                 if (pickup.numberBillOfLading != null)

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:homaexpress_courier_admin/services/wallet_transition_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../controller/dashboard_controller.dart';
 import '../utils/drawer_widget.dart';
 import '../utils/custom_appbar.dart';
@@ -34,6 +36,24 @@ class DashboardView extends StatelessWidget {
                 _buildStatsGrid(),
                 const SizedBox(height: 24),
                 _buildOrdersChart(),
+                ElevatedButton(
+                  onPressed: () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    print("TOKEN_FROM_PREFS: ${prefs.getString('token')}");
+                    final service = WalletTransitionService();
+                    // این مقادیر تستیه، دستی بذار یه customer_id و number_transition واقعی خودت
+                    final ok = await service.createWalletTransition(
+                      customerId: 123, // تست
+                      numberTransition: 'TEST-123456',
+                      paymentDate: DateTime.now(),
+                      price: '10000',
+                      token: '*** اینجا موقتاً توکن واقعی رو هاردکد کن برای تست ***',
+                    );
+                    print('TEST WALLET RESULT = $ok');
+                  },
+                  child: Text('Test Wallet Transition'),
+                ),
+
               ],
             ),
           );

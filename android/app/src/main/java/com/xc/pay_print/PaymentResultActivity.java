@@ -9,46 +9,53 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.PluginRegistry;
 
 public class PaymentResultActivity extends Activity {
 
-    private static final String TAG = "PaymentResultActivity";
-    public static MethodChannel channel;
+    private static MethodChannel methodChannel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        Log.d(TAG, "📥 PaymentResultActivity launched");
+        Log.d("PaymentResultActivity", "onCreate called, intent = " + getIntent());
 
         Intent intent = getIntent();
+        Map<String, Object> result = new HashMap<>();
+
         if (intent != null) {
-            String status = intent.getStringExtra("EXTRA_PAYMENT_RESULT");
-            String rrn = intent.getStringExtra("EXTRA_RRN");
-            String trace = intent.getStringExtra("EXTRA_TRACE_NO");
-            String message = intent.getStringExtra("EXTRA_RESULT_MESSAGE");
+            String transaction = intent.getStringExtra("transaction");
+            Log.d("PaymentResultActivity", "transaction extra = " + transaction);
 
-            Log.d(TAG, "✅ Payment result: " + status + ", RRN: " + rrn + ", trace: " + trace);
-
-            if (channel != null) {
-                Map<String, Object> result = new HashMap<>();
-                result.put("status", status);
-                result.put("rrn", rrn);
-                result.put("trace", trace);
-                result.put("message", message);
-
-                channel.invokeMethod("onPaymentResult", result);
+            if (transaction != null) {
+                // کل رشته خام برای Flutter
+                result.put("raw", transaction);
+            } else {
+                // fallback فقط برای زمانی که اپ پوز ساختار دیگه‌ای بفرسته
+                String status = intent.getStringExtra("status");
+                String message = intent.getStringExtra("message");
+                result.put("status", status != null ? status : "unknown");
+                result.put("message", message != null ? message : "No message");
             }
+
+            invokePaymentResult(result);
         } else {
-            Log.e(TAG, "❌ No intent received");
+            Log.e("PaymentResultActivity", "❌ intent is null in onCreate");
         }
 
         finish();
     }
 
-    // Set channel reference from MainActivity or Plugin
-    public static void setMethodChannel(MethodChannel methodChannel) {
-        channel = methodChannel;
+    public static void setMethodChannel(MethodChannel channel) {
+        Log.d("PaymentResultActivity", "✅ MethodChannel set");
+        methodChannel = channel;
+    }
+
+    public static void invokePaymentResult(Map<String, ?> result) {
+        if (methodChannel != null) {
+            Log.d("PaymentResultActivity", "📨 invokePaymentResult called with: " + result);
+            methodChannel.invokeMethod("onPaymentResult", result);
+        } else {
+            Log.e("PaymentResultActivity", "❌ methodChannel is null, cannot send result to Flutter");
+        }
     }
 }

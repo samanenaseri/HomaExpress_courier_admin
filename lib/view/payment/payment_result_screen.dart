@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:homaexpress_courier_admin/view/pickup_view.dart';
 import '../../utils/constants.dart';
 
 class PaymentResultScreen extends StatelessWidget {
@@ -44,8 +45,8 @@ class PaymentResultScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
-                  onPressed: () => Get.back(), // یا مسیر دلخواه
-                  child: const Text('بازگشت'),
+                  onPressed: () => Get.offAllNamed('/pickups'), // یا مسیر دلخواه
+                  child: const Text('بازگشت به لیست مرسوله‌ها'),
                 )
               ],
             ),

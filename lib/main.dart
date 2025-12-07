@@ -5,6 +5,7 @@ import 'package:homaexpress_courier_admin/utils/constants.dart';
 import 'package:homaexpress_courier_admin/view/login/loginscreen.dart';
 import 'package:homaexpress_courier_admin/view/payment/payment_result_screen.dart';
 import 'package:homaexpress_courier_admin/view/payment/payment_screen.dart';
+import 'package:homaexpress_courier_admin/view/profile_view.dart';
 import 'package:homaexpress_courier_admin/view/splash/splashscreen.dart';
 import 'package:homaexpress_courier_admin/view/dashboard_view.dart';
 import 'package:homaexpress_courier_admin/view/pickup_view.dart';
@@ -41,6 +42,7 @@ class MyApp extends StatelessWidget {
           GetPage(name: '/pickups', page: () => PickupView()),
           GetPage(name: '/payment', page: () => PaymentScreen()),
           GetPage(name: '/paymentResult', page: () => PaymentResultScreen()),
+          GetPage(name: '/profile', page: () => ProfileScreen()),
         ],
       ),
     ),
