@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:homaexpress_courier_admin/controller/pickup_controller.dart';
+import 'package:homaexpress_courier_admin/model/pickup_model.dart';
 import 'package:intl/intl.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,10 +12,13 @@ import '../services/wallet_transition_service.dart';
 
 class PaymentController extends GetxController {
   final RxString orderNumber = ''.obs;
+  final RxInt orderId = 0.obs;
   final RxDouble amount = 0.0.obs; // مبلغ بر حسب "ریال"
   final RxBool isProcessing = false.obs;
 
   final RxInt senderId = 0.obs;
+  final RxBool alreadyPaid = false.obs;
+
 
   late final PaymentService _paymentService;
   late final WalletTransitionService _walletService;
@@ -22,6 +27,7 @@ class PaymentController extends GetxController {
   static const Duration _fallbackTimeout = Duration(seconds: 60);
 
   String _token = '';
+  PickupOrder? _pickup;
 
   final NumberFormat _fmt = NumberFormat('#,##0', 'en_US');
 
@@ -30,10 +36,20 @@ class PaymentController extends GetxController {
     super.onInit();
 
     final args = Get.arguments as Map<String, dynamic>? ?? {};
-    print("########################## y$args");
     orderNumber.value = args['orderNumber']?.toString() ?? '';
+    orderId.value = args['id'] is int
+        ? args['id']
+        : int.tryParse(args['id']?.toString() ?? '') ?? 0;
 
     senderId.value = args['customer_id'];
+    _pickup = args['pickup'] as PickupOrder?;
+    if (_pickup?.paymentTransitionCode != null &&
+        _pickup!.paymentTransitionCode!.toString().trim().isNotEmpty) {
+      alreadyPaid.value = true;
+     // debugPrint('[PAY] This pickup already has paymentTransitionCode = ${_pickup!.paymentTransitionCode}');
+    }
+    // print('==============[PAY][ARGS]========= ${Get.arguments}');
+    // print('=============[PAY][orderId]======== ${orderId.value} orderNumber=${orderNumber.value}');
     final rawAmount = args['amount'];
     if (rawAmount is num) {
       amount.value = rawAmount.toDouble();
@@ -59,9 +75,9 @@ class PaymentController extends GetxController {
   Future<void> _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString('token') ?? '';
-    if (kDebugMode) {
-      debugPrint('[PAY] Loaded token: ${_token.isNotEmpty ? 'OK' : 'EMPTY'}');
-    }
+    // if (kDebugMode) {
+    //   debugPrint('[PAY] Loaded token: ${_token.isNotEmpty ? 'OK' : 'EMPTY'}');
+    // }
   }
 
   String get formattedAmount {
@@ -74,6 +90,14 @@ class PaymentController extends GetxController {
   }
 
   Future<void> startPayment() async {
+    if (_pickup?.paymentTransitionCode != null &&
+        _pickup!.paymentTransitionCode!.toString().trim().isNotEmpty) {
+      Get.snackbar(
+        'پرداخت قبلی یافت شد',
+        'برای این سفارش قبلاً پرداخت با کد پیگیری ${_pickup!.paymentTransitionCode} ثبت شده است.',
+      );
+      return;
+    }
     if (isProcessing.value) return;
 
     final int displayAmount = amount.value.round(); // ریال
@@ -106,13 +130,33 @@ class PaymentController extends GetxController {
     });
 
     try {
-      if (kDebugMode) {
-        debugPrint(
-          '[PAY][Controller] attempting startPayment '
-              'amountForGateway=$amountForGateway orderNo=${orderNumber.value}',
+      // if (kDebugMode) {
+      //   debugPrint(
+      //     '[PAY][Controller] attempting startPayment '
+      //         'amountForGateway=$amountForGateway orderNo=${orderNumber.value}',
+      //   );
+      // }
+      //print('========[PAY] USING TOKEN (for wallet later): $_token');
+      final check = await _walletService.checkPaymentStatus(
+        customerId: senderId.value,
+        orderId: orderId.value,
+        token: _token,
+      );
+
+      if (check != null && check['status'] == 'paid') {
+        final nt = check['number_transition']?.toString();
+
+        Get.offNamed(
+          '/paymentResult',
+          arguments: {
+            'status': 'success',
+            'message': 'این سفارش قبلاً پرداخت شده است.',
+            'rawResult': nt != null ? 'number_transition=$nt' : null,
+          },
         );
+        return; // ❌ دیگه نرو TechPay
       }
-      print('========[PAY] USING TOKEN (for wallet later): $_token');
+
 
       final ok = await _paymentService.startPayment(
         amountForGateway,
@@ -127,132 +171,31 @@ class PaymentController extends GetxController {
           'فراخوانی اپ بانکی ناموفق بود (invoke failed). لاگ‌ها را چک کن.',
         );
       } else {
-        if (kDebugMode) {
-          debugPrint('[PAY][Controller] startPayment invoked successfully');
-        }
+        // if (kDebugMode) {
+        //   debugPrint('[PAY][Controller] startPayment invoked successfully');
+        // }
       }
     } catch (e, st) {
       _clearFallback();
       isProcessing.value = false;
-      debugPrint('[PAY][Controller] startPayment error: $e\n$st');
+     // debugPrint('[PAY][Controller] startPayment error: $e\n$st');
       Get.snackbar('خطا', 'خطا هنگام شروع پرداخت: ${e.toString()}');
     }
   }
 
   /// این متد نتیجه پرداخت را از Native می‌گیرد
-  // void _onPaymentResult(Map<String, dynamic> result) async {
-  //
-  //   _clearFallback();
-  //   //isProcessing.value = false;
-  //
-  //   print('================= PAYMENT RESULT =================');
-  //   print('[PAY][Listener] RESULT MAP: $result');
-  //   print('==================================================');
-  //
-  //   final raw = result['raw']?.toString() ??
-  //       result['transaction']?.toString() ??
-  //       result.toString();
-  //
-  //   final bankStatus = result['status']?.toString() ?? '';
-  //   final bankMessage = result['message']?.toString();
-  //
-  //   print('[PAY][Listener] RAW STRING = $raw');
-  //   print('[PAY][Listener] bankStatus = $bankStatus');
-  //   print('[PAY][Listener] bankMessage = $bankMessage');
-  //
-  //   final bool looksSuccessful =
-  //       bankStatus == '00' ||
-  //           raw.contains('تراکنش موفق') ||
-  //           raw.contains(',00,');
-  //
-  //   print('[PAY][Listener] looksSuccessful = $looksSuccessful');
-  //
-  //   String status = looksSuccessful ? 'success' : 'failed';
-  //   String message;
-  //
-  //   if (!looksSuccessful) {
-  //     // ❌ پرداخت ناموفق یا انصراف
-  //     message = bankMessage != null && bankMessage.isNotEmpty
-  //         ? bankMessage
-  //         : 'پرداخت ناموفق بود.\n$raw';
-  //
-  //     Get.offNamed(
-  //       '/paymentResult',
-  //       arguments: {
-  //         'status': status,
-  //         'message': message,
-  //         'orderNumber': orderNumber.value,
-  //         'amount': amount.value,
-  //         'rawResult': raw,
-  //       },
-  //     );
-  //     return;
-  //   }
-  //
-  //   // ✅ اینجا یعنی پرداخت موفق بوده
-  //   message = 'پرداخت با موفقیت انجام شد.';
-  //
-  //   final numberTransition =
-  //       _extractTrackingCodeFromRaw(raw) ?? orderNumber.value;
-  //
-  //   final paymentDate = _extractDateFromRaw(raw);
-  //
-  //   final int walletAmount = amount.value.round();
-  //   final String priceStr = walletAmount.toString();
-  //
-  //   print('------------- CALLING WALLET SERVICE -------------');
-  //   print('[PAY][Wallet] customerId = ${senderId.value}');
-  //   print('[PAY][Wallet] numberTransition = $numberTransition');
-  //   print('[PAY][Wallet] paymentDate = $paymentDate');
-  //   print('[PAY][Wallet] price = $priceStr');
-  //   print('[PAY][Wallet] token empty? ${_token.isEmpty}');
-  //   print('[PAY][Wallet] token before wallet call: $_token');
-  //   print('--------------------------------------------------');
-  //
-  //   try {
-  //     final ok = await _walletService.createWalletTransition(
-  //       customerId: senderId.value,
-  //       numberTransition: numberTransition,
-  //       paymentDate: paymentDate,
-  //       price: priceStr,
-  //       token: _token,
-  //     );
-  //
-  //     print('[PAY][Wallet] service returned ok = $ok');
-  //
-  //     if (!ok) {
-  //       message +=
-  //       '\n پرداخت انجام شد ';
-  //       //Get.snackbar('هشدار', message);
-  //     }
-  //   } catch (e, st) {
-  //     print('[PAY][Wallet] error: $e\n$st');
-  //     message += '\n(خطا در ارتباط با سرور برای ثبت پرداخت)';
-  //     Get.snackbar('خطا', message);
-  //   }
-  //
-  //   Get.offNamed(
-  //     '/paymentResult',
-  //     arguments: {
-  //       'status': status,
-  //       'message': message,
-  //       'orderNumber': orderNumber.value,
-  //       'amount': amount.value,
-  //       'rawResult': raw,
-  //     },
-  //   );
-  // }
-//for better design
+
   void _onPaymentResult(Map<String, dynamic> result) async {
-    print('🔥🔥🔥 ENTERED _onPaymentResult 🔥🔥🔥');
-    print('XC_DEBUG 5) ENTERED _onPaymentResult with result = $result');
+    // print('XC_DEBUG 5) ENTERED _onPaymentResult with result = $result');
 
     _clearFallback();
-    // ❌ دیگه isProcessing = false نمی‌ذاریم اینجا
 
-    print('================= PAYMENT RESULT =================');
-    print('[PAY][Listener] RESULT MAP: $result');
-    print('==================================================');
+    // ✅ هر نتیجه‌ای که بیاد (موفق، ناموفق، انصراف)، پردازش تموم شده
+    isProcessing.value = false;
+
+    // print('================= PAYMENT RESULT =================');
+    // print('[PAY][Listener] RESULT MAP: $result');
+    // print('==================================================');
 
     final raw = result['raw']?.toString() ??
         result['transaction']?.toString() ??
@@ -261,16 +204,16 @@ class PaymentController extends GetxController {
     final bankStatus = result['status']?.toString() ?? '';
     final bankMessage = result['message']?.toString();
 
-    print('[PAY][Listener] RAW STRING = $raw');
-    print('[PAY][Listener] bankStatus = $bankStatus');
-    print('[PAY][Listener] bankMessage = $bankMessage');
+    // print('[PAY][Listener] RAW STRING = $raw');
+    // print('[PAY][Listener] bankStatus = $bankStatus');
+    // print('[PAY][Listener] bankMessage = $bankMessage');
 
     final bool looksSuccessful =
         bankStatus == '00' ||
             raw.contains('تراکنش موفق') ||
             raw.contains(',00,');
 
-    print('[PAY][Listener] looksSuccessful = $looksSuccessful');
+    // print('[PAY][Listener] looksSuccessful = $looksSuccessful');
 
     String status = looksSuccessful ? 'success' : 'failed';
     String message;
@@ -297,22 +240,26 @@ class PaymentController extends GetxController {
     // ✅ اینجا یعنی پرداخت موفق بوده
     message = 'پرداخت با موفقیت انجام شد.';
 
+    try {
+      final pickupsController = Get.find<PickupController>();
+      await pickupsController.fetchPickups();
+    } catch (e) {
+      // print('[PAY] Could not refresh pickups: $e');
+    }
+
     final numberTransition =
         _extractTrackingCodeFromRaw(raw) ?? orderNumber.value;
-
     final paymentDate = _extractDateFromRaw(raw);
-
     final int walletAmount = amount.value.round();
     final String priceStr = walletAmount.toString();
+    if (orderId.value <= 0) {
+      // print('[PAY][ERROR] orderId is invalid: ${orderId.value}');
+      return; // ❗ wallet را اصلاً صدا نزن
+    }
 
-    print('------------- CALLING WALLET SERVICE -------------');
-    print('[PAY][Wallet] customerId = ${senderId.value}');
-    print('[PAY][Wallet] numberTransition = $numberTransition');
-    print('[PAY][Wallet] paymentDate = $paymentDate');
-    print('[PAY][Wallet] price = $priceStr');
-    print('[PAY][Wallet] token empty? ${_token.isEmpty}');
-    print('[PAY][Wallet] token before wallet call: $_token');
-    print('--------------------------------------------------');
+    // print('------------- CALLING WALLET SERVICE -------------');
+    // print('[PAY][Wallet] customerId = ${senderId.value}');
+    // print('[PAY][Wallet] numberTransition = $numberTransition');
 
     try {
       final ok = await _walletService.createWalletTransition(
@@ -320,14 +267,12 @@ class PaymentController extends GetxController {
         numberTransition: numberTransition,
         paymentDate: paymentDate,
         price: priceStr,
+        orderId: orderId.value,
         token: _token,
       );
-
       print('[PAY][Wallet] service returned ok = $ok');
-      // ❗ دیگه message رو دستکاری نمی‌کنیم، Snackbar هم نمی‌زنیم
     } catch (e, st) {
-      print('[PAY][Wallet] error: $e\n$st');
-      // بازم Snackbar نداریم؛ فقط لاگ می‌گیریم که UI تمیز بماند
+     // print('[PAY][Wallet] error: $e\n$st');
     }
 
     // در هر حالت (wallet موفق / ناموفق)، فقط به صفحه نتیجه می‌رویم
@@ -342,6 +287,7 @@ class PaymentController extends GetxController {
       },
     );
   }
+
 
   String? _extractTrackingCodeFromRaw(String raw) {
     final reg = RegExp(r'\b\d{6,12}\b');
@@ -365,7 +311,7 @@ class PaymentController extends GetxController {
 
         return DateTime(gregorian.year, gregorian.month, gregorian.day);
       } catch (e) {
-        debugPrint('[PAY][DateParse] Error parsing Jalali date: $e');
+       // debugPrint('[PAY][DateParse] Error parsing Jalali date: $e');
       }
     }
 

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:homaexpress_courier_admin/utils/constants.dart';
+import 'package:homaexpress_courier_admin/utils/custom_appbar.dart';
+import 'package:homaexpress_courier_admin/utils/drawer_widget.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -11,16 +15,20 @@ class ProfileScreen extends StatelessWidget {
     final String email = 'user@example.com';
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: AppColors.logoPurple,
-        title: const Text(
-          'پروفایل من',
-          style: TextStyle(color: Colors.white),
-        ),
-        centerTitle: true,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+      drawer: CustomDrawer(),
+      appBar: CustomAppBar(
+        actions:[
+          IconButton(
+            icon: const Icon(Icons.arrow_forward, color: Colors.white,),
+            onPressed: () {
+
+               Get.back();
+            },
+          ),
+        ],
+        title: 'Profile',
+        backgroundColor: AppColors.logoGold,
+        textColor: Colors.white,
       ),
       body: SafeArea(
         child: SingleChildScrollView(

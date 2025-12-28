@@ -22,6 +22,7 @@ class MainActivity : FlutterFragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("MainActivity", "🔥 onCreate called")
+        Log.d("APP_BOOT", "onCreate pid=${android.os.Process.myPid()} time=${System.currentTimeMillis()}")
 
         EmvConfig.loadDefaultAidAndCapk()
 
@@ -39,15 +40,15 @@ class MainActivity : FlutterFragmentActivity() {
             )
 
             if (result == 0) {
-                Log.d("MainActivity", "✅ Mag card reader opened successfully")
+                //Log.d("MainActivity", "✅ Mag card reader opened successfully")
                 val detectResult = magReader.detect()
                 if (detectResult == 0) {
                     val trackData =
                         magReader.getTraceData(PosMagCardReader.CARDREADER_TRACE_INDEX_2)
                     val cardInfo = trackData?.let { String(it) }
-                    Log.d("MainActivity", "💾 Track2 Data: $cardInfo")
+                   // Log.d("MainActivity", "💾 Track2 Data: $cardInfo")
                 } else {
-                    Log.e("MainActivity", "❌ No card detected")
+                  //  Log.e("MainActivity", "❌ No card detected")
                 }
                 magReader.close()
             } else {
@@ -64,7 +65,7 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        Log.d("MainActivity", "🔥 configureFlutterEngine called")
+       // Log.d("MainActivity", "🔥 configureFlutterEngine called")
 
         // کانال پرینتر
         MethodChannel(
@@ -107,10 +108,10 @@ class MainActivity : FlutterFragmentActivity() {
                     val orderId = call.argument<String>("orderId") ?: "1234567890"
                     val terminalId = call.argument<String>("terminalId") ?: "51533600"
                     val merchantId = call.argument<String>("merchantId") ?: "51040293"
-                    Log.d(
-                        "MainActivity",
-                        "🔷 startPayment called with amount: $amount, orderId: $orderId"
-                    )
+//                    Log.d(
+//                        "MainActivity",
+//                        "🔷 startPayment called with amount: $amount, orderId: $orderId"
+//                    )
                     paymentManager.startPayment(amount, orderId, terminalId, merchantId)
                     result.success(null)
                 }
@@ -127,13 +128,14 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        Log.d("TechPay", "onNewIntent action=${intent.action} data=${intent.data}")
 
         val trx = intent.getStringExtra("transaction")
-        Log.d("TechPay", "onNewIntent called, transaction = $trx")
+      //  Log.d("TechPay", "onNewIntent called, transaction = $trx")
 
         if (trx != null) {
             // فقط برای این‌که مطمئن شی callback میاد
-            Toast.makeText(this, trx, Toast.LENGTH_LONG).show()
+           // Toast.makeText(this, trx, Toast.LENGTH_LONG).show()
 
             // 👈 اینجا نتیجه رو برای Flutter می‌فرستیم
             if (::paymentChannel.isInitialized) {
@@ -149,13 +151,13 @@ class MainActivity : FlutterFragmentActivity() {
                     map["message"] = parts[4]
                 }
 
-                Log.d("TechPay", "sending onPaymentResult to Flutter: $map")
+                //Log.d("TechPay", "sending onPaymentResult to Flutter: $map")
                 paymentChannel.invokeMethod("onPaymentResult", map)
             } else {
                 Log.e("TechPay", "paymentChannel is NOT initialized")
             }
         } else {
-            Log.d("TechPay", "onNewIntent called but transaction extra is null")
+           // Log.d("TechPay", "onNewIntent called but transaction extra is null")
         }
     }
 
@@ -163,10 +165,10 @@ class MainActivity : FlutterFragmentActivity() {
         super.onDestroy()
         try {
             val cardManager = POICardManager.getDefault(this)
-            Log.d(
-                "MainActivity",
-                "✅ POICardManager released/unregistered (if applicable)"
-            )
+//            Log.d(
+//                "MainActivity",
+//                "✅ POICardManager released/unregistered (if applicable)"
+//            )
         } catch (e: Exception) {
             Log.e("MainActivity", "💥 Error in onDestroy: ${e.message}")
         }

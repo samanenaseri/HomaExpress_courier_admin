@@ -1,14 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../model/pickup_model.dart';
 import '../services/attachment_service.dart';
 
+Map<String, dynamic> _decode(String body) {
+  return json.decode(body) as Map<String, dynamic>;
+}
 class PickupController extends GetxController {
   final RxList<PickupOrder> pickups = <PickupOrder>[].obs;
   final RxBool isLoading = false.obs;
@@ -27,8 +29,19 @@ class PickupController extends GetxController {
     super.onInit();
     _attachmentService = AttachmentService();
     fetchPickups();
+    _recoverLostCameraImageIfAny();
   }
 
+  Future<void> _recoverLostCameraImageIfAny() async {
+    final lost = await _picker.retrieveLostData();
+    if (lost.isEmpty) return;
+
+    final file = lost.file;
+    if (file == null) return;
+
+    print('[ATTACH][LOST] recovered: ${file.path}');
+    // اگر لازم داری اینجا آپلود را انجام بده یا فایل را ذخیره کن
+  }
   Future<void> fetchPickups({bool refresh = false}) async {
     if (refresh) {
       currentPage.value = 1;
@@ -58,80 +71,76 @@ class PickupController extends GetxController {
         },
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      // print('Response status: ${response.statusCode}');
+      // print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = json.decode(response.body);
-        print('\n=== API Response ===');
-        print('Full response: $responseData');
+       // final Map<String, dynamic> responseData = json.decode(response.body);
+        final Map<String, dynamic> responseData =
+        await compute(_decode, response.body);
+
+        // print('\n=== API Response ===');
+        // print('Full response: $responseData');
 
         if (responseData['data'] != null) {
           final data = responseData['data'];
-          print('\n=== Pagination Data ===');
-          print('Current page: ${data['current_page']}');
-          print('Last page: ${data['last_page']}');
-          print('Total: ${data['total']}');
+          // print('\n=== Pagination Data ===');
+
 
           final List<dynamic> items = data['data'] ?? [];
-          print('\n=== Items Data ===');
-          print('Number of items: ${items.length}');
+          // print('\n=== Items Data ===');
+          // print('Number of items: ${items.length}');
 
-          if (refresh) {
-            pickups.clear();
+          // if (refresh) {
+          //   pickups.clear();
+          // }
+          if (kDebugMode) {
+            debugPrint('[Pickups] status=200 items=${items.length}');
           }
+
 
           try {
             final List<PickupOrder> newPickups = items.map((item) {
-              print('\n=== Processing Item for PickupOrder ===');
-              print('Raw item data: $item');
+              // print('\n=== Processing Item for PickupOrder ===');
+              // print('Raw item data: $item');
 
               if (item['sender_address'] != null) {
-                print('\nSender Address Raw Data:');
-                print('Type: ${item['sender_address'].runtimeType}');
-                print('Content: ${item['sender_address']}');
-                print('Address field: ${item['sender_address']['address']}');
-                print('City field: ${item['sender_address']['city']}');
+                // print('\nSender Address Raw Data:');
+                // print('Type: ${item['sender_address'].runtimeType}');
+
               } else {
-                print('No sender_address data found in item');
+                //print('No sender_address data found in item');
               }
 
               try {
                 final pickup = PickupOrder.fromJson(item);
-                print('\nSuccessfully created PickupOrder:');
-                print('Order Number: ${pickup.orderNumber}');
-                print('Sender Address Object: ${pickup.senderAddress}');
+                // print('\nSuccessfully created PickupOrder:');
+
                 if (pickup.senderAddress != null) {
-                  print('Sender Address Details:');
-                  print('- Address: ${pickup.senderAddress!.address}');
-                  print('- Name: ${pickup.senderAddress!.name}');
-                  print('- Mobile: ${pickup.senderAddress!.mobile}');
-                  print('- City: ${pickup.senderAddress!.city?.enName}');
+                  // print('Sender Address Details:');
+
                   if (pickup.senderAddress!.city?.country != null) {
-                    print(
-                      '- Country: ${pickup.senderAddress!.city!.country!.enName}',
-                    );
+                    // print(
+                    //   '- Country: ${pickup.senderAddress!.city!.country!.enName}',
+                    // );
                   }
                 }
                 return pickup;
               } catch (e) {
-                print('Error creating PickupOrder: $e');
+                //print('Error creating PickupOrder: $e');
                 rethrow;
               }
             }).toList();
 
-            print('\n=== Adding Pickups to List ===');
-            print('Number of pickups to add: ${newPickups.length}');
 
             if (newPickups.isNotEmpty) {
               pickups.addAll(newPickups);
-              print('Successfully added ${newPickups.length} pickups');
-              print('Total pickups in list: ${pickups.length}');
+             // print('Successfully added ${newPickups.length} pickups');
             } else {
-              print('No pickups to add');
+
             }
           } catch (e) {
-            print('Error processing pickups: $e');
+            //print('Error processing pickups: $e');
             Get.snackbar(
               'Error',
               'Failed to process pickup data: $e',
@@ -160,7 +169,7 @@ class PickupController extends GetxController {
         );
       }
     } catch (e) {
-      print('Exception occurred: $e');
+      //print('Exception occurred: $e');
       Get.snackbar(
         'Error',
         'An error occurred while fetching pickups: $e',
@@ -217,7 +226,7 @@ class PickupController extends GetxController {
         );
       }
     } catch (e) {
-      print('Complete pickup error: $e');
+     // print('Complete pickup error: $e');
       Get.snackbar(
         'Error',
         'An error occurred while completing pickup: $e',
@@ -231,16 +240,17 @@ class PickupController extends GetxController {
   /// [orderId] = همان attachmentable_id که باید برای API بفرستیم
   Future<void> uploadAttachmentForOrder(int orderId) async {
     try {
-      // ۱) گرفتن عکس از دوربین
+      await Future.delayed(const Duration(milliseconds: 50));
       final XFile? picked = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 80, // کمی فشرده‌تر برای کاهش حجم
-        maxWidth: 1600,
+        imageQuality: 60, // کمی فشرده‌تر برای کاهش حجم
+        maxWidth: 1280,
+        maxHeight: 1280,
       );
 
       if (picked == null) {
         // کاربر دوربین را کنسل کرده
-        print('[ATTACH] user cancelled camera');
+       // print('[ATTACH] user cancelled camera');
         return;
       }
 
@@ -256,7 +266,7 @@ class PickupController extends GetxController {
       }
 
       // ۳) درخواست آپلود
-      Get.snackbar('در حال آپلود', 'لطفاً صبر کنید...');
+      //Get.snackbar('در حال آپلود', 'لطفاً صبر کنید...');
 
       final ok = await _attachmentService.uploadOrderAttachment(
         file: file,
@@ -281,7 +291,7 @@ class PickupController extends GetxController {
         );
       }
     } catch (e, st) {
-      print('[ATTACH] upload error: $e\n$st');
+     // print('[ATTACH] upload error: $e\n$st');
       Get.snackbar(
         'خطا',
         'خطا هنگام آپلود فایل: ${e.toString()}',

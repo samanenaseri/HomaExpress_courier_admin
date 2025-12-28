@@ -121,38 +121,56 @@ class LoginScreen extends StatelessWidget {
   );
 
   /// 🔘 دکمه‌ی لاگین متصل به state کنترلر
-  Widget _loginButton({required VoidCallback onPress}) => Obx(
-        () => Container(
-      padding:
-      const EdgeInsets.symmetric(horizontal: 50, vertical: 30),
-      child: ProgressButton(
-        stateWidgets: {
-          ButtonState.idle:
-          Text('ورود', style: AppTextStyles.loginConfirmButton),
-          ButtonState.loading:
-          Text('انتظار..', style: AppTextStyles.loginConfirmButton),
-          ButtonState.fail:
-          Text('خطا', style: AppTextStyles.loginConfirmButton),
-          ButtonState.success:
-          Text('موفقیت', style: AppTextStyles.loginConfirmButton),
-        },
-        stateColors: {
-          ButtonState.idle: AppColors.logoPurple,
-          ButtonState.loading:
-          AppColors.logoPurple.withOpacity(0.8),
-          ButtonState.fail: Colors.red,
-          ButtonState.success: Colors.green,
-        },
+  /// 🔘 دکمه‌ی لاگین متصل به state کنترلر
+  /// 🔘 دکمه‌ی لاگین متصل به state کنترلر، بدون پکیج عجیب
+  Widget _loginButton({required VoidCallback onPress}) => Obx(() {
+    final state = _loginController.state.value;
+    final isLoading = state == ButtonState.loading;
 
-        /// 👇 اینجا مهم‌ترین تغییره
-        state: _loginController.state.value,
-
-        /// وقتی در حال لودینگ هست، دیگه کلیک نشه
-        onPressed: _loginController.state.value ==
-            ButtonState.loading
-            ? null
-            : onPress,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 30),
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.logoPurple,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onPressed: isLoading ? null : onPress,
+          child: isLoading
+              ? Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor:
+                  AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'در حال ورود...',
+                style: AppTextStyles.loginConfirmButton,
+              ),
+            ],
+          )
+              : Text(
+            'ورود',
+            style: AppTextStyles.loginConfirmButton,
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  });
+
+
+
+
 }

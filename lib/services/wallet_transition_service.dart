@@ -6,7 +6,7 @@ class WalletTransitionService {
   final String baseUrl;
 
   WalletTransitionService({
-    this.baseUrl = 'http://api.homaexpressco.com/api/v1/portal',
+    this.baseUrl = 'https://api.homaexpressco.com/api/v1/portal',
   });
 
   Future<bool> createWalletTransition({
@@ -14,6 +14,7 @@ class WalletTransitionService {
     required String numberTransition,
     required DateTime paymentDate,
     required String price,
+    required int orderId,
     String? token,
   }) async {
     final url = Uri.parse('$baseUrl/walletTransition');
@@ -28,6 +29,7 @@ class WalletTransitionService {
       "payment_method_id": 2,
       "price": int.parse(price),
       "type": "add",
+      "order_id": orderId,
     };
 
     final headers = <String, String>{
@@ -37,7 +39,7 @@ class WalletTransitionService {
 
     print('================ WALLET TRANSITION ================');
     print('[WalletTransition] URL: $url');
-    print('[WalletTransition] HEADERS: $headers');
+    print('[WalletTransition] token? ${token != null && token.isNotEmpty}');
     print('[WalletTransition] BODY: ${jsonEncode(body)}');
     print('===================================================');
 
@@ -66,5 +68,41 @@ class WalletTransitionService {
       return true;
     }
   }
+  Future<Map<String, dynamic>?> checkPaymentStatus({
+    required int customerId,
+    required int orderId,
+    String? token,
+  }) async {
+    final url = Uri.parse(
+      '$baseUrl/wallet-transitions/check'
+          '?customer_id=$customerId'
+          '&order_id=$orderId',
+    );
+
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      if (token != null && token.isNotEmpty)
+        'Authorization': 'Bearer $token',
+    };
+
+    print('=========== CHECK WALLET STATUS ===========');
+    print('[WalletCheck] URL: $url');
+    print('[WalletCheck] HEADERS: $headers');
+    print('==========================================');
+
+    final resp = await http.get(url, headers: headers);
+
+    print('[WalletCheck] STATUS: ${resp.statusCode}');
+    print('[WalletCheck] BODY: ${resp.body}');
+
+    if (resp.statusCode != 200) return null;
+
+    try {
+      return jsonDecode(resp.body) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
 
 }

@@ -7,7 +7,7 @@ class PickupResponse {
   PickupResponse({required this.status, required this.data});
 
   factory PickupResponse.fromJson(Map<String, dynamic> json) {
-    print('Parsing PickupResponse: $json');
+    //print('Parsing PickupResponse: $json');
     return PickupResponse(
       status: json['status'] ?? false,
       data: PickupData.fromJson(json['data'] ?? {}),
@@ -29,7 +29,7 @@ class PickupData {
   });
 
   factory PickupData.fromJson(Map<String, dynamic> json) {
-    print('Parsing PickupData: $json');
+    //print('Parsing PickupData: $json');
     return PickupData(
       currentPage: json['current_page'] ?? 1,
       data: (json['data'] as List<dynamic>?)
@@ -54,7 +54,7 @@ class PickupOrder {
   final String? flightDate;
   final int? airlineId;
   final int? nonDistributionStatusId;
-  final String? paymentTransitionCode;
+  String? paymentTransitionCode;
   final int paymentMethodId;
   final int pickupPersonId;
   final int latestTrackingId;
@@ -146,27 +146,27 @@ class PickupOrder {
   });
 
   factory PickupOrder.fromJson(Map<String, dynamic> json) {
-    print('\n=== Parsing PickupOrder ===');
-    print('Raw pickup data: $json');
+    // print('\n=== Parsing PickupOrder ===');
+    // print('Raw pickup data: $json');
     
     try {
       final senderAddressData = json['senderAddress'] ?? json['sender_address'];
-      print('Sender address data: $senderAddressData');
+      //print('Sender address data: $senderAddressData');
       
       final receiverAddressData = json['receiverAddress'] ?? json['receiver_address'];
-      print('Receiver address data: $receiverAddressData');
+      //print('Receiver address data: $receiverAddressData');
       
       final senderData = json['sender'];
-      print('Sender data: $senderData');
+      //print('Sender data: $senderData');
       
       final receiverData = json['receiver'];
-      print('Receiver data: $receiverData');
+      //print('Receiver data: $receiverData');
       
       final originData = json['origin'];
-      print('Origin data: $originData');
+      //print('Origin data: $originData');
       
       final destinationData = json['destination'];
-      print('Destination data: $destinationData');
+      //print('Destination data: $destinationData');
 
       return PickupOrder(
         id: json['id'] ?? 0,
@@ -220,7 +220,7 @@ class PickupOrder {
         receiverAddress: receiverAddressData != null ? AddressInfo.fromJson(receiverAddressData) : null,
       );
     } catch (e) {
-      print('Error parsing PickupOrder: $e');
+     // print('Error parsing PickupOrder: $e');
       rethrow;
     }
   }
@@ -244,8 +244,8 @@ class CustomerInfo {
   });
 
   factory CustomerInfo.fromJson(Map<String, dynamic> json) {
-    print('\n=== Parsing CustomerInfo ===');
-    print('Raw customer data: $json');
+    // print('\n=== Parsing CustomerInfo ===');
+    // print('Raw customer data: $json');
     return CustomerInfo(
       id: json['id'] ?? 0,
       fullName: json['full_name'],
@@ -279,11 +279,11 @@ class City {
   });
 
   factory City.fromJson(Map<String, dynamic> json) {
-    print('\n=== Parsing City ===');
-    print('Raw city data: $json');
+    // print('\n=== Parsing City ===');
+    // print('Raw city data: $json');
     
     final countryData = json['country'];
-    print('Country data: $countryData');
+    //print('Country data: $countryData');
     
     return City(
       id: json['id'] ?? 0,
@@ -330,14 +330,14 @@ class AddressInfo {
   });
 
   factory AddressInfo.fromJson(Map<String, dynamic> json) {
-    print('\n=== Parsing AddressInfo ===');
-    print('Raw address data: $json');
-    print('Data type: ${json.runtimeType}');
+    // print('\n=== Parsing AddressInfo ===');
+    // print('Raw address data: $json');
+    // print('Data type: ${json.runtimeType}');
     
     try {
       final cityData = json['city'];
-      print('City data: $cityData');
-      print('City data type: ${cityData?.runtimeType}');
+      // print('City data: $cityData');
+      // print('City data type: ${cityData?.runtimeType}');
       
       final addressInfo = AddressInfo(
         id: json['id'] ?? 0,
@@ -357,12 +357,12 @@ class AddressInfo {
         city: cityData != null ? City.fromJson(cityData) : null,
       );
       
-      print('\nCreated AddressInfo:');
-      print('ID: ${addressInfo.id}');
-      print('Address: ${addressInfo.address}');
-      print('Name: ${addressInfo.name}');
-      print('Mobile: ${addressInfo.mobile}');
-      print('City: ${addressInfo.city?.enName}');
+      // print('\nCreated AddressInfo:');
+      // print('ID: ${addressInfo.id}');
+      // print('Address: ${addressInfo.address}');
+      // print('Name: ${addressInfo.name}');
+      // print('Mobile: ${addressInfo.mobile}');
+      // print('City: ${addressInfo.city?.enName}');
       
       return addressInfo;
     } catch (e) {
@@ -390,8 +390,8 @@ class Country {
   });
 
   factory Country.fromJson(Map<String, dynamic> json) {
-    print('\n=== Parsing Country ===');
-    print('Raw country data: $json');
+    // print('\n=== Parsing Country ===');
+    // print('Raw country data: $json');
     return Country(
       id: json['id'] ?? 0,
       faName: json['fa_name'] ?? '',

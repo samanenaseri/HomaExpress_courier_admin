@@ -8,37 +8,43 @@ class AttachmentService {
   AttachmentService({
     this.baseUrl = 'https://api.homaexpressco.com/api/v1/portal',
   });
-
-  /// آپلود عکسِ گرفته شده از دوربین برای یک سفارش (order)
   Future<bool> uploadOrderAttachment({
     required File file,
-    required int orderId,      // همان attachmentable_id
+    required int orderId,
     String? token,
   }) async {
-    final url = Uri.parse('$baseUrl/attachment');
+    if (!await file.exists()) {
+      print('[ATTACH] file does not exist: ${file.path}');
+      return false;
+    }
+    final len = await file.length();
+    if (len <= 0) {
+      print('[ATTACH] file size is 0: ${file.path}');
+      return false;
+    }
 
+    final url = Uri.parse('$baseUrl/attachment');
     final request = http.MultipartRequest('POST', url);
 
-    // فایل به صورت file[] (مطابق API)
-    request.files.add(
-      await http.MultipartFile.fromPath('file[]', file.path),
-    );
+    request.files.add(await http.MultipartFile.fromPath('file[]', file.path));
 
-    // فیلدهای ثابت
     request.fields['attachmentable_id'] = orderId.toString();
-    request.fields['attachmentable_type'] = 'order';  // 🔒 ثابت
+    request.fields['attachmentable_type'] = 'order';
 
-    if (token != null) {
+    if (token != null && token.isNotEmpty) {
       request.headers['Authorization'] = 'Bearer $token';
     }
 
     final streamed = await request.send();
     final response = await http.Response.fromStream(streamed);
 
-    // برای دیباگ اگر خواستی:
-    // print('UPLOAD STATUS: ${response.statusCode}');
-    // print('UPLOAD BODY: ${response.body}');
+    //print('[ATTACH] status=${response.statusCode}');
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+     // print('[ATTACH] body=${response.body}');
+    }
 
     return response.statusCode >= 200 && response.statusCode < 300;
   }
+
+
 }

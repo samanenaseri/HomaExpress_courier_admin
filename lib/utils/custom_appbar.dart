@@ -11,6 +11,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Color textColor;
   final double elevation;
   late final AuthController _authController;
+  final Widget? leading;
 
   CustomAppBar({
     super.key,
@@ -20,6 +21,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.backgroundColor = const Color.fromRGBO(133, 51, 138, 1),
     this.textColor = Colors.white,
     this.elevation = 0,
+    this.leading,
   }) {
     _authController = Get.put(AuthController());
   }
@@ -27,6 +29,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      actions: actions,
       title: Text(
         title,
         style: TextStyle(
@@ -34,6 +37,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           fontWeight: FontWeight.bold,
         ),
       ),
+
+      leading: leading,
       centerTitle: true,
       backgroundColor: AppColors.logoPurple,
       elevation: 0,

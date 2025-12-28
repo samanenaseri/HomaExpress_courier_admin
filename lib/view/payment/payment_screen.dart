@@ -16,9 +16,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void initState() {
     super.initState();
 
-    controller = Get.isRegistered<PaymentController>()
-        ? Get.find<PaymentController>()
-        : Get.put(PaymentController());
+    if (Get.isRegistered<PaymentController>()) {
+      Get.delete<PaymentController>(force: true);
+    }
+    controller = Get.put(PaymentController());
   }
 
   @override

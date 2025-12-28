@@ -24,10 +24,10 @@ class PaymentService {
   }
 
   Future<void> _methodCallHandler(MethodCall call) async {
-    if (kDebugMode) {
-      debugPrint('XC_DEBUG 4) method = ${call.method}');
-      debugPrint('XC_DEBUG 4) arguments = ${call.arguments}');
-    }
+    // if (kDebugMode) {
+    //   debugPrint('XC_DEBUG 4) method = ${call.method}');
+    //   debugPrint('XC_DEBUG 4) arguments = ${call.arguments}');
+    // }
 
     if (call.method == 'onPaymentResult') {
       final args = call.arguments;
@@ -44,22 +44,22 @@ class PaymentService {
         result = <String, dynamic>{'raw': args?.toString()};
       }
 
-      if (kDebugMode) {
-        debugPrint('XC_DEBUG 4.1) calling listener with result = $result');
-      }
+      // if (kDebugMode) {
+      //   debugPrint('XC_DEBUG 4.1) calling listener with result = $result');
+      // }
 
       final listener = _listener;
       if (listener != null) {
         listener(result);
       } else {
-        if (kDebugMode) {
-          debugPrint('XC_DEBUG 4.2) listener is null, dropping result');
-        }
+        // if (kDebugMode) {
+        //   debugPrint('XC_DEBUG 4.2) listener is null, dropping result');
+        // }
       }
     } else {
-      if (kDebugMode) {
-        debugPrint('XC_DEBUG 4.X) unexpected method: ${call.method}');
-      }
+      // if (kDebugMode) {
+      //   debugPrint('XC_DEBUG 4.X) unexpected method: ${call.method}');
+      // }
     }
   }
 
@@ -70,14 +70,14 @@ class PaymentService {
       await _channel.invokeMethod<bool>('isPaymentAppInstalled');
       return installed ?? false;
     } on PlatformException catch (e) {
-      if (kDebugMode) {
-        debugPrint('isPaymentAppInstalled PlatformException: $e');
-      }
+      // if (kDebugMode) {
+      //   debugPrint('isPaymentAppInstalled PlatformException: $e');
+      // }
       return false;
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('isPaymentAppInstalled error: $e');
-      }
+      // if (kDebugMode) {
+      //   debugPrint('isPaymentAppInstalled error: $e');
+      // }
       return false;
     }
   }
@@ -97,16 +97,16 @@ class PaymentService {
         if (merchantId != null) 'merchantId': merchantId,
       };
 
-      if (kDebugMode) {
-        debugPrint('XC_DEBUG 4.startPayment args = $args');
-      }
+      // if (kDebugMode) {
+      //   debugPrint('XC_DEBUG 4.startPayment args = $args');
+      // }
 
       await _channel.invokeMethod('startPayment', args);
       return true;
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('startPayment error: $e');
-      }
+      // if (kDebugMode) {
+      //   debugPrint('startPayment error: $e');
+      // }
       return false;
     }
   }

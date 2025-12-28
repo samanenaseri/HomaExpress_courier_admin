@@ -24,7 +24,7 @@ public class PaymentManager {
      * فقط اپ TechPay رو لانچ می‌کنه و amount/orderId رو توی extras می‌فرسته.
      */
     public void startPayment(double amount, String orderId, String terminalId, String merchantId) {
-        Log.d(TAG, "🚀 startPayment called amount=" + amount + " orderId=" + orderId);
+      //  Log.d(TAG, "🚀 startPayment called amount=" + amount + " orderId=" + orderId);
 
         try {
             String packageName = "com.tech.pay"; // اگر اسم پکیج اپ بانکی چیز دیگه‌ایه، همین‌جا عوضش کن
@@ -87,7 +87,7 @@ public class PaymentManager {
 //        channel.invokeMethod("onPaymentResult", result);
 //    }
     public void handleResultFromIntent(Intent intent) {
-        Log.d(TAG, "2) handleResultFromIntent called, intent = " + intent);
+       // Log.d(TAG, "2) handleResultFromIntent called, intent = " + intent);
 
         if (intent == null) {
             Log.e(TAG, "2.1) intent is null");
@@ -96,7 +96,7 @@ public class PaymentManager {
         }
 
         String transaction = intent.getStringExtra("transaction");
-        Log.d(TAG, "2.2) transaction extra = " + transaction);
+     //   Log.d(TAG, "2.2) transaction extra = " + transaction);
 
         if (transaction == null) {
             Log.e(TAG, "2.3) transaction is null");
@@ -104,7 +104,7 @@ public class PaymentManager {
             return;
         }
 
-        Log.d(TAG, "📩 TechPay result: " + transaction);
+       // Log.d(TAG, "📩 TechPay result: " + transaction);
 
         String[] parts = transaction.split(",");
         String status = parts.length > 0 ? parts[0] : "unknown";
@@ -115,7 +115,7 @@ public class PaymentManager {
         result.put("status", status);
         result.put("message", message);
 
-        Log.d(TAG, "3) invoking onPaymentResult on channel with result = " + result);
+       // Log.d(TAG, "3) invoking onPaymentResult on channel with result = " + result);
         channel.invokeMethod("onPaymentResult", result);
     }
 

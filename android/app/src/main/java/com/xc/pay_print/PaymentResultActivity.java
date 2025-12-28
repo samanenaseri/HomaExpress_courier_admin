@@ -17,14 +17,14 @@ public class PaymentResultActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d("PaymentResultActivity", "onCreate called, intent = " + getIntent());
+     //   Log.d("PaymentResultActivity", "onCreate called, intent = " + getIntent());
 
         Intent intent = getIntent();
         Map<String, Object> result = new HashMap<>();
 
         if (intent != null) {
             String transaction = intent.getStringExtra("transaction");
-            Log.d("PaymentResultActivity", "transaction extra = " + transaction);
+           // Log.d("PaymentResultActivity", "transaction extra = " + transaction);
 
             if (transaction != null) {
                 // کل رشته خام برای Flutter
@@ -46,13 +46,13 @@ public class PaymentResultActivity extends Activity {
     }
 
     public static void setMethodChannel(MethodChannel channel) {
-        Log.d("PaymentResultActivity", "✅ MethodChannel set");
+       // Log.d("PaymentResultActivity", "✅ MethodChannel set");
         methodChannel = channel;
     }
 
     public static void invokePaymentResult(Map<String, ?> result) {
         if (methodChannel != null) {
-            Log.d("PaymentResultActivity", "📨 invokePaymentResult called with: " + result);
+           // Log.d("PaymentResultActivity", "📨 invokePaymentResult called with: " + result);
             methodChannel.invokeMethod("onPaymentResult", result);
         } else {
             Log.e("PaymentResultActivity", "❌ methodChannel is null, cannot send result to Flutter");

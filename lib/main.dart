@@ -12,6 +12,7 @@ import 'package:homaexpress_courier_admin/view/pickup_view.dart';
 import 'package:sizer/sizer.dart';
 
 void main() {
+  print('🔥 APP MAIN STARTED');
   runApp(const MyApp());
 }
 
